@@ -19,6 +19,7 @@ export default function Sidebar() {
     { path: '/dashboard/stock', label: 'Smart Stock', icon: 'ti ti-package', count: '3', countBg: '#633806', countText: '#FAC775' },
     { path: '/dashboard/purchase-orders', label: 'Purchase Orders', icon: 'ti ti-shopping-cart', count: '2', countBg: '#A32D2D', countText: '#F7C1C1' },
     { path: '/dashboard/invoice', label: 'Smart Invoice', icon: 'ti ti-scan', count: '4', countBg: '#A32D2D', countText: '#F7C1C1' },
+    { path: '/dashboard/invoice/history', label: 'Invoice History', icon: 'ti ti-history' },
     { path: '/dashboard/staff', label: 'Staff', icon: 'ti ti-users' },
     { path: '/dashboard/menu', label: 'Menu & Pricing', icon: 'ti ti-chef-hat' },
     { path: '/dashboard/reports', label: 'Sales Report', icon: 'ti ti-chart-bar' },
