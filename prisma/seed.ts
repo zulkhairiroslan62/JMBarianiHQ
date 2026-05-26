@@ -6,17 +6,43 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('Seeding database with real JM Bariani House data...')
 
-  // Create main outlet (Subang Jaya HQ)
-  const mainOutlet = await prisma.outlet.create({
-    data: {
-      name: 'Subang Jaya (HQ)',
-      address: '21 & 23, Jalan SS 18/6, Ss18, 47500 Subang Jaya, Selangor',
-      targetDaily: 8000,
-      status: 'ACTIVE',
-    },
-  })
+  // Create all 4 real outlets
+  const outlets = await Promise.all([
+    prisma.outlet.create({
+      data: {
+        name: 'Subang Jaya (HQ)',
+        address: 'No 29 & 31 Jalan SS18/6, Subang Jaya, Selangor, 47500',
+        targetDaily: 8000,
+        status: 'ACTIVE',
+      },
+    }),
+    prisma.outlet.create({
+      data: {
+        name: 'Setia Alam',
+        address: 'Setia City Mall, LG-148, Level Lower Ground (Phase 2), Shah Alam, Selangor, 40170',
+        targetDaily: 7000,
+        status: 'ACTIVE',
+      },
+    }),
+    prisma.outlet.create({
+      data: {
+        name: 'Wangsa Walk',
+        address: 'Wangsa Mall Walk, Lot G-02-A, Ground Floor, Kuala Lumpur, 53300',
+        targetDaily: 6500,
+        status: 'ACTIVE',
+      },
+    }),
+    prisma.outlet.create({
+      data: {
+        name: 'IOI City Mall',
+        address: 'LG-227, IOI City Mall 2, Putrajaya, Selangor, 62502',
+        targetDaily: 7500,
+        status: 'ACTIVE',
+      },
+    }),
+  ])
 
-  console.log('Created main outlet:', mainOutlet.name)
+  console.log('Created 4 outlets:', outlets.map(o => o.name).join(', '))
 
   // Create owner user
   const ownerPassword = await hash('admin123', 12)
@@ -31,19 +57,48 @@ async function main() {
 
   console.log('Created owner:', owner.email)
 
-  // Create manager for main outlet
+  // Create managers for each outlet
   const managerPassword = await hash('manager123', 12)
-  const manager = await prisma.user.create({
-    data: {
-      email: 'manager@jmbarianihouse.com',
-      password: managerPassword,
-      name: 'Manager Subang',
-      role: 'MANAGER',
-      outletId: mainOutlet.id,
-    },
-  })
+  const managers = await Promise.all([
+    prisma.user.create({
+      data: {
+        email: 'manager.subang@jmbarianihouse.com',
+        password: managerPassword,
+        name: 'Manager Subang',
+        role: 'MANAGER',
+        outletId: outlets[0].id,
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'manager.setia@jmbarianihouse.com',
+        password: managerPassword,
+        name: 'Manager Setia Alam',
+        role: 'MANAGER',
+        outletId: outlets[1].id,
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'manager.wangsa@jmbarianihouse.com',
+        password: managerPassword,
+        name: 'Manager Wangsa',
+        role: 'MANAGER',
+        outletId: outlets[2].id,
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'manager.ioi@jmbarianihouse.com',
+        password: managerPassword,
+        name: 'Manager IOI',
+        role: 'MANAGER',
+        outletId: outlets[3].id,
+      },
+    }),
+  ])
 
-  console.log('Created manager:', manager.email)
+  console.log('Created 4 managers')
 
   // Real menu items from JM Bariani House website
   const menuItems = [
@@ -89,21 +144,24 @@ async function main() {
     { name: 'Air Sirap', price: 3, cost: 0.6, category: 'Beverage' },
   ]
 
-  for (const item of menuItems) {
-    await prisma.menuItem.create({
-      data: {
-        name: item.name,
-        price: item.price,
-        cost: item.cost,
-        margin: ((item.price - item.cost) / item.price) * 100,
-        category: item.category,
-        status: 'ACTIVE',
-        outletId: mainOutlet.id,
-      },
-    })
+  // Create menu items for all outlets
+  for (const outlet of outlets) {
+    for (const item of menuItems) {
+      await prisma.menuItem.create({
+        data: {
+          name: item.name,
+          price: item.price,
+          cost: item.cost,
+          margin: ((item.price - item.cost) / item.price) * 100,
+          category: item.category,
+          status: 'ACTIVE',
+          outletId: outlet.id,
+        },
+      })
+    }
   }
 
-  console.log('Created', menuItems.length, 'menu items')
+  console.log('Created', menuItems.length * outlets.length, 'menu items across all outlets')
 
   // Real inventory items for restaurant
   const inventoryItems = [
@@ -121,21 +179,24 @@ async function main() {
     { itemName: 'Vegetables (Mixed)', quantity: 40, unit: 'kg', status: 'SUFFICIENT' },
   ]
 
-  for (const item of inventoryItems) {
-    await prisma.inventory.create({
-      data: {
-        itemName: item.itemName,
-        quantity: item.quantity,
-        unit: item.unit,
-        status: item.status,
-        outletId: mainOutlet.id,
-      },
-    })
+  // Create inventory for all outlets
+  for (const outlet of outlets) {
+    for (const item of inventoryItems) {
+      await prisma.inventory.create({
+        data: {
+          itemName: item.itemName,
+          quantity: item.quantity,
+          unit: item.unit,
+          status: item.status,
+          outletId: outlet.id,
+        },
+      })
+    }
   }
 
-  console.log('Created inventory items')
+  console.log('Created inventory items for all outlets')
 
-  // Create staff for main outlet
+  // Create staff for all outlets
   const staffRoles = ['Head Chef', 'Sous Chef', 'Line Cook', 'Cashier', 'Waiter', 'Kitchen Helper', 'Cleaner']
   const staffNames = [
     'Ahmad bin Hassan',
@@ -150,20 +211,23 @@ async function main() {
     'Tan Ah Kow',
   ]
 
-  for (let i = 0; i < 10; i++) {
-    await prisma.staff.create({
-      data: {
-        name: staffNames[i],
-        role: staffRoles[i % staffRoles.length],
-        shift: ['MORNING', 'EVENING', 'FULL'][i % 3],
-        outletId: mainOutlet.id,
-      },
-    })
+  for (const outlet of outlets) {
+    for (let i = 0; i < 10; i++) {
+      await prisma.staff.create({
+        data: {
+          name: staffNames[i],
+          role: staffRoles[i % staffRoles.length],
+          shift: ['MORNING', 'EVENING', 'FULL'][i % 3],
+          outletId: outlet.id,
+        },
+      })
+    }
   }
 
-  console.log('Created staff members')
+  console.log('Created staff members for all outlets')
 
   console.log('Seeding completed with real JM Bariani House data!')
+  console.log('Total: 4 outlets, 5 users, 124 menu items, 48 inventory items, 40 staff')
 }
 
 main()

@@ -19,7 +19,7 @@ export default function Sidebar() {
         </div>
         <div>
           <p className="text-xs font-medium text-[#FAC775] m-0">JM Bariani House</p>
-          <p className="text-[10px] text-[rgba(250,199,117,0.4)] m-0">Subang Jaya HQ</p>
+          <p className="text-[10px] text-[rgba(250,199,117,0.4)] m-0">4 outlets</p>
         </div>
       </div>
 
