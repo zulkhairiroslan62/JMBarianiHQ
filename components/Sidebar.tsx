@@ -42,6 +42,19 @@ export default function Sidebar() {
         </Link>
 
         <Link
+          href="/dashboard/realtime"
+          className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs no-underline mb-0.5 ${
+            isActive('/dashboard/realtime')
+              ? 'bg-[#7B3F00] text-[#FAC775]'
+              : 'bg-transparent text-[rgba(255,255,255,0.5)] hover:bg-[rgba(255,255,255,0.06)] hover:text-[rgba(255,255,255,0.8)]'
+          }`}
+        >
+          <i className="ti ti-activity text-sm" aria-hidden="true"></i>
+          Real-Time Sales
+          <span className="ml-auto w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+        </Link>
+
+        <Link
           href="/dashboard/outlets"
           className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs no-underline mb-0.5 ${
             isActive('/dashboard/outlets')
