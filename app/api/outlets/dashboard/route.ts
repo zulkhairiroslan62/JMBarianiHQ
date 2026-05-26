@@ -12,13 +12,20 @@ export async function GET() {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const yesterdayStart = new Date(todayStart.getTime() - 86400000)
     const tomorrowStart = new Date(todayStart.getTime() + 86400000)
+    const weekAgo = new Date(now.getTime() - 7 * 86400000)
+    const hourAgo = new Date(now.getTime() - 3600000)
 
     const outlets = await prisma.outlet.findMany({
-      include: { _count: { select: { menuItems: true, staff: true, sales: true } } },
+      include: { _count: { select: { menuItems: true, staff: true } } },
       orderBy: { name: 'asc' },
     })
 
-    const data = await Promise.all(outlets.map(async (outlet) => {
+    // Overall totals for health score baseline
+    let highestRevenue = 0
+    let totalStaffAcrossOutlets = 0
+    let totalInventoryAcrossOutlets = 0
+
+    const outData = await Promise.all(outlets.map(async (outlet) => {
       // Today's sales
       const todaySales = await prisma.sale.findMany({
         where: { outletId: outlet.id, createdAt: { gte: todayStart, lt: tomorrowStart } },
@@ -26,68 +33,104 @@ export async function GET() {
       const todayRevenue = todaySales.reduce((s, r) => s + r.total, 0)
       const todayOrders = todaySales.length
 
-      // Yesterday's sales
+      // Yesterday
       const yesterdaySales = await prisma.sale.findMany({
         where: { outletId: outlet.id, createdAt: { gte: yesterdayStart, lt: todayStart } },
       })
       const yesterdayRevenue = yesterdaySales.reduce((s, r) => s + r.total, 0)
-
-      // Growth percentage
       const growth = yesterdayRevenue > 0 ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100 : 0
 
-      // Inventory count
+      // Inventory
       const inventoryCount = await prisma.inventory.count({ where: { outletId: outlet.id } })
+      const lowStockItems = await prisma.inventory.findMany({
+        where: { outletId: outlet.id, quantity: { lte: 10 } },
+        select: { itemName: true, quantity: true, unit: true },
+        take: 3,
+      })
 
-      // Daily target (store in outlet field or use default)
-      const dailyTarget = (outlet as any).dailyTarget || 7500
+      // Staff count
+      const staffCount = await prisma.staff.count({ where: { outletId: outlet.id } })
 
-      // Performance tag
-      const allOutletsRevenue = await Promise.all(
-        outlets.map(async (o) => {
-          const s = await prisma.sale.aggregate({
-            where: { outletId: o.id, createdAt: { gte: todayStart, lt: tomorrowStart } },
-            _sum: { total: true },
-          })
-          return { id: o.id, revenue: s._sum.total || 0 }
-        })
-      )
-      const maxRevenue = Math.max(...allOutletsRevenue.map(r => r.revenue))
-      const isBestSeller = allOutletsRevenue.find(r => r.id === outlet.id)?.revenue === maxRevenue && maxRevenue > 0
+      // 7-day sales sparkline
+      const weekSales = await prisma.sale.findMany({
+        where: { outletId: outlet.id, createdAt: { gte: weekAgo } },
+        orderBy: { createdAt: 'asc' },
+      })
+      const sparkline: number[] = []
+      for (let i = 6; i >= 0; i--) {
+        const day = new Date(todayStart.getTime() - i * 86400000)
+        const nextDay = new Date(day.getTime() + 86400000)
+        const daySales = weekSales.filter(s => new Date(s.createdAt) >= day && new Date(s.createdAt) < nextDay)
+        sparkline.push(daySales.reduce((s, r) => s + r.total, 0))
+      }
 
-      let tag = ''
-      let tagColor = ''
-      if (isBestSeller) { tag = '🔥 Best Seller Today'; tagColor = 'amber' }
-      else if (growth > 5) { tag = '⚡ Rising Star'; tagColor = 'blue' }
-      else if (growth >= -5) { tag = '⚡ Consistent Performer'; tagColor = 'blue' }
-      else { tag = '📉 Needs Attention'; tagColor = 'red' }
+      // Track for health score
+      if (todayRevenue > highestRevenue) highestRevenue = todayRevenue
+      totalStaffAcrossOutlets += staffCount
+      totalInventoryAcrossOutlets += inventoryCount
+
+      const dailyTarget = 7500
+      const targetPct = dailyTarget > 0 ? Math.min(Math.round((todayRevenue / dailyTarget) * 100), 100) : 0
+
+      // Health score (0-100): revenue (35%), inventory (25%), staff (20%), orders (20%)
+      const revScore = dailyTarget > 0 ? Math.min(Math.round((todayRevenue / dailyTarget) * 35), 35) : 0
+      const invScore = inventoryCount >= 12 ? 25 : Math.round((inventoryCount / 12) * 25)
+      const staffScore = staffCount >= 8 ? 20 : Math.round((staffCount / 8) * 20)
+      const ordScore = todayOrders >= 50 ? 20 : Math.round((todayOrders / 50) * 20)
+      const healthScore = Math.min(revScore + invScore + staffScore + ordScore, 100)
 
       return {
-        id: outlet.id,
-        name: outlet.name,
-        address: outlet.address || outlet.name + ', Selangor',
-        status: 'ACTIVE',
-        todayRevenue,
-        yesterdayRevenue,
-        growth: parseFloat(growth.toFixed(1)),
-        dailyTarget,
-        targetPct: dailyTarget > 0 ? Math.min(Math.round((todayRevenue / dailyTarget) * 100), 100) : 0,
-        todayOrders,
-        menuItems: outlet._count.menuItems,
-        inventory: inventoryCount,
-        staff: outlet._count.staff,
-        tag,
-        tagColor,
+        id: outlet.id, name: outlet.name, address: outlet.name + ', Selangor', status: 'ACTIVE',
+        todayRevenue, yesterdayRevenue, growth: parseFloat(growth.toFixed(1)),
+        dailyTarget, targetPct, todayOrders, menuItems: outlet._count.menuItems,
+        inventory: inventoryCount, staff: staffCount,
+        healthScore, sparkline,
+        lowStockItems: lowStockItems.map(i => ({ name: i.itemName, qty: i.quantity, unit: i.unit })),
+        tag: healthScore >= 80 ? '🔥 Best Seller Today' : healthScore >= 60 ? '⚡ Consistent Performer' : '📉 Needs Attention',
+        tagColor: healthScore >= 80 ? 'amber' : healthScore >= 60 ? 'blue' : 'red',
         image: `https://images.unsplash.com/photo-${['1517248135467-4c7edcad34c4', '1552566626-52f8b828add9', '1559339352-56f7d7e8f8b8', '1466978913427-d18b5d3d2e8d'][outlets.indexOf(outlet) % 4]}?q=80&w=400&auto=format&fit=crop`,
       }
     }))
 
-    // Overall stats
-    const totalRevenue = data.reduce((s, o) => s + o.todayRevenue, 0)
-    const totalOrders = data.reduce((s, o) => s + o.todayOrders, 0)
-    const topOutlet = [...data].sort((a, b) => b.todayRevenue - a.todayRevenue)[0]
-    const alerts = data.filter(o => o.growth < -5).length
+    // Sort by health score for ranking
+    const sorted = [...outData].sort((a, b) => b.healthScore - a.healthScore)
+    const totalRevenue = outData.reduce((s, o) => s + o.todayRevenue, 0)
+    const totalOrders = outData.reduce((s, o) => s + o.todayOrders, 0)
+    const bestOutlet = sorted[0]
+    const worstOutlet = sorted[sorted.length - 1]
+    const fastestGrowth = [...outData].sort((a, b) => b.growth - a.growth)[0]
 
-    return NextResponse.json({ outlets: data, overview: { totalRevenue, totalOrders, topOutlet, alerts } })
+    // Smart alerts
+    const alerts: { type: 'critical' | 'warning' | 'info'; message: string }[] = []
+    outData.forEach(o => {
+      if (o.healthScore < 50) alerts.push({ type: 'critical', message: `${o.name} health score critical (${o.healthScore}/100)` })
+      if (o.growth < -10) alerts.push({ type: 'warning', message: `${o.name} revenue dropped ${Math.abs(o.growth)}%` })
+      o.lowStockItems.forEach(i => alerts.push({ type: 'warning', message: `${i.name} low at ${o.name} (${i.qty} ${i.unit})` }))
+    })
+    if (fastestGrowth && fastestGrowth.growth > 10) alerts.push({ type: 'info', message: `${fastestGrowth.name} exceeded target (+${fastestGrowth.growth}%)` })
+    if (alerts.length === 0) alerts.push({ type: 'info', message: '🎉 All outlets performing well today' })
+
+    // Activity feed (recent orders)
+    const recentOrders = await prisma.sale.findMany({
+      where: { createdAt: { gte: hourAgo } },
+      include: { outlet: { select: { name: true } }, menuItem: { select: { name: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    })
+    const activity = recentOrders.map(o => ({
+      time: new Date(o.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      outlet: o.outlet?.name || 'Unknown',
+      item: o.menuItem?.name || 'Order',
+      amount: o.total,
+    }))
+
+    return NextResponse.json({
+      outlets: outData,
+      overview: { totalRevenue, totalOrders, bestOutlet: bestOutlet?.name || '-', worstOutlet: worstOutlet?.name || '-', fastestGrowth: fastestGrowth?.name || '-', alerts: alerts.length },
+      alerts,
+      activity,
+      ranking: sorted.map((o, i) => ({ rank: i + 1, name: o.name, score: o.healthScore })),
+    })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

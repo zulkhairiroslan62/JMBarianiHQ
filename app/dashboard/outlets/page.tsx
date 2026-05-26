@@ -1,211 +1,199 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 
-interface OutletData {
-  id: string; name: string; address: string; status: string
-  todayRevenue: number; yesterdayRevenue: number; growth: number
-  dailyTarget: number; targetPct: number; todayOrders: number
-  menuItems: number; inventory: number; staff: number
-  tag: string; tagColor: string; image: string
+const T = {
+  bg: (d: boolean) => d ? 'bg-[#0a0f1a]' : 'bg-[#f5f6f8]',
+  card: (d: boolean) => d ? 'linear-gradient(180deg, #111827 0%, #0f172a 100%)' : 'linear-gradient(180deg, #fff 0%, #fcfcfc 100%)',
+  bd: (d: boolean) => d ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(255,255,255,0.7)',
+  sh: (d: boolean) => d ? '0 10px 30px rgba(0,0,0,0.3)' : '0 10px 30px rgba(0,0,0,0.06)',
+  tc: (d: boolean) => d ? 'text-gray-100' : 'text-gray-900',
+  mc: (d: boolean) => d ? 'text-gray-400' : 'text-gray-500',
 }
 
 export default function OutletsPage() {
-  const [outlets, setOutlets] = useState<OutletData[]>([])
-  const [overview, setOverview] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
+  const [outlets, setOutlets] = useState<any[]>([])
+  const [ov, setOv] = useState<any>(null)
+  const [alerts, setAlerts] = useState<any[]>([])
+  const [activity, setActivity] = useState<any[]>([])
+  const [ranking, setRanking] = useState<any[]>([])
+  const [loading, setLoading] = useState(true); const [search, setSearch] = useState('')
+  const [dark, setDark] = useState(false); const [live, setLive] = useState(true)
+  const [lastUpd, setLastUpd] = useState(''); const [qa, setQa] = useState<string|null>(null)
+  const [af, setAf] = useState<'all'|'top'|'low'|'critical'>('all')
+  const intRef = useRef<NodeJS.Timeout|null>(null)
 
   const fetchData = async () => {
     try {
-      const res = await fetch('/api/outlets/dashboard')
-      const data = await res.json()
-      if (data.outlets) setOutlets(data.outlets)
-      if (data.overview) setOverview(data.overview)
+      const r = await fetch('/api/outlets/dashboard'); const d = await r.json()
+      if (d.outlets) setOutlets(d.outlets); if (d.overview) setOv(d.overview)
+      if (d.alerts) setAlerts(d.alerts); if (d.activity) setActivity(d.activity)
+      if (d.ranking) setRanking(d.ranking); setLastUpd(new Date().toLocaleTimeString())
     } catch {} finally { setLoading(false) }
   }
+  useEffect(() => { fetchData(); if (live) intRef.current = setInterval(fetchData, 10000); return () => { if (intRef.current) clearInterval(intRef.current) } }, [live])
 
-  useEffect(() => { fetchData() }, [])
+  const filtered = outlets.filter((o: any) =>
+    o.name.toLowerCase().includes(search.toLowerCase())
+  ).filter((o: any) => af === 'all' ? true : af === 'top' ? o.healthScore >= 80 : af === 'low' ? o.healthScore < 60 : o.healthScore < 50)
 
-  const filtered = outlets.filter(o =>
-    o.name.toLowerCase().includes(search.toLowerCase()) ||
-    o.address.toLowerCase().includes(search.toLowerCase())
-  )
+  const AlertColor = (t: string) => t === 'critical' ? { bg: 'rgba(239,68,68,0.1)', text: 'text-red-600', dot: '🔴' }
+    : t === 'warning' ? { bg: 'rgba(234,179,8,0.1)', text: 'text-amber-600', dot: '⚠️' }
+    : { bg: 'rgba(59,130,246,0.1)', text: 'text-blue-600', dot: 'ℹ️' }
+
+  if (loading) return <div className={`min-h-screen ${T.bg(dark)} ${T.tc(dark)} p-8`}><p className={T.mc(dark)}>Loading command center...</p></div>
 
   return (
-    <div className="min-h-screen text-gray-900" style={{ background: '#f5f6f8', fontFamily: "'Inter', sans-serif" }}>
+    <div className={`min-h-screen ${T.bg(dark)} ${T.tc(dark)} transition-colors duration-300`} style={{fontFamily:"'Inter',sans-serif"}}>
       <div className="max-w-[1600px] mx-auto p-8">
-
-        {/* ===== HEADER ===== */}
-        <div className="flex items-center justify-between mb-10">
-          <div>
-            <h1 className="text-[2.5rem] font-extrabold tracking-[-0.03em] text-gray-900">Outlets</h1>
-            <p className="text-gray-500 mt-1.5">Monitor all restaurant branches in real-time.</p>
-          </div>
+        {/* HEADER */}
+        <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
           <div className="flex items-center gap-4">
-            <div className="bg-white rounded-2xl px-5 py-3 shadow-[0_4px_12px_rgba(0,0,0,0.04)] border border-gray-100 w-80">
-              <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-                placeholder="Search outlets..." className="w-full outline-none text-sm bg-transparent placeholder:text-gray-400" />
+            <h1 className="text-[2.2rem] font-extrabold tracking-[-0.03em]">Outlets</h1>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl" style={{background:dark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.03)'}}>
+              <span className={`w-2 h-2 rounded-full ${live?'bg-green-500 animate-pulse':'bg-gray-400'}`}/>
+              <span className="text-[10px] font-semibold uppercase">{live?'Live':'Paused'}</span>
+              <span className="text-[10px] text-gray-400">{lastUpd&&`${lastUpd}`}</span>
+              <button onClick={()=>setLive(!live)} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-medium">{live?'ON':'OFF'}</button>
+              <button onClick={fetchData} className="text-xs text-amber-500 ml-1">↻</button>
             </div>
-            <button className="text-white px-7 py-[14px] rounded-2xl font-semibold shadow-lg transition-all duration-[250ms] ease-[cubic-bezier(.4,0,.2,1)] hover:scale-[1.03] hover:shadow-[0_8px_25px_rgba(168,106,28,0.35)]"
-              style={{ background: 'linear-gradient(135deg, #a86a1c 0%, #d88a28 100%)' }}>
-              <span className="mr-1.5">+</span> Add Outlet
-            </button>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={()=>setDark(!dark)} className="px-3 py-1.5 rounded-xl text-xs transition" style={{background:dark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.04)'}}>{dark?'☀️':'🌙'}</button>
+            {['all','top','low','critical'].map(f=>(
+              <button key={f} onClick={()=>setAf(f as any)} className={`px-3 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition ${af===f?(dark?'bg-amber-500/20 text-amber-400':'bg-amber-100 text-amber-700'):''}`}
+                style={{background:af===f?undefined:dark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.03)'}}>
+                {f==='all'?'All':f==='top'?'🔥':f==='low'?'⚠':'🔴'}
+              </button>
+            ))}
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search..."
+              className={`w-44 px-4 py-2 rounded-2xl text-sm outline-none border ${dark?'bg-[#1e293b] border-[#334155] placeholder:text-gray-500':'bg-white border-gray-100 placeholder:text-gray-400'}`}/>
+            <button className="text-white px-5 py-2 rounded-2xl font-semibold shadow-lg transition-all duration-[250ms] hover:scale-[1.02]"
+              style={{background:'linear-gradient(135deg,#a86a1c 0%,#d88a28 100%)'}}>+ Add</button>
           </div>
         </div>
 
-        {/* ===== OVERVIEW CARDS ===== */}
-        <div className="grid grid-cols-4 gap-6 mb-10">
+        {/* KPI */}
+        <div className="grid grid-cols-5 gap-4 mb-7">
           {[
-            { label: 'Total Revenue', value: `RM ${(overview?.totalRevenue || 0).toLocaleString()}`, badge: '+12.6% vs yesterday', icon: '💰', iconBg: '#dcfce7', col: '#22c55e' },
-            { label: 'Orders Today', value: `${overview?.totalOrders || 0}`, badge: '+8.4% vs yesterday', icon: '📦', iconBg: '#dbeafe', col: '#3b82f6' },
-            { label: 'Top Outlet', value: overview?.topOutlet?.name || '-', badge: '🔥 Best Seller Today', icon: '🏆', iconBg: '#fef3c7', col: '#d97706' },
-            { label: 'Alerts', value: `${overview?.alerts || 0}`, badge: 'Needs attention', icon: '⚠️', iconBg: '#fee2e2', col: '#ef4444', badgeCol: 'text-red-500' },
-          ].map((card, i) => (
-            <div key={i} className="rounded-[20px] p-6 shadow-[0_10px_30px_rgba(0,0,0,0.06)] transition-all duration-[250ms] ease-[cubic-bezier(.4,0,.2,1)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.09)] hover:-translate-y-0.5"
-              style={{ background: 'linear-gradient(180deg, #ffffff 0%, #fcfcfc 100%)', border: '1px solid rgba(255,255,255,0.7)' }}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-500 text-xs tracking-wide uppercase font-medium">{card.label}</p>
-                  <h2 className="text-[1.75rem] font-extrabold tracking-[-0.02em] mt-2">{card.value}</h2>
-                  <p className={`${card.badgeCol || 'text-green-600'} text-sm mt-2 font-medium`}>{card.badge}</p>
-                </div>
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-inner" style={{ background: card.iconBg }}>
-                  {card.icon}
-                </div>
-              </div>
+            {l:'Revenue',v:`RM ${(ov?.totalRevenue||0).toLocaleString()}`,ic:'💰'},
+            {l:'Orders',v:`${ov?.totalOrders||0}`,ic:'📦'},
+            {l:'Best',v:ov?.bestOutlet||'-',ic:'🥇'},
+            {l:'Fastest',v:ov?.fastestGrowth||'-',ic:'🚀'},
+            {l:'Alerts',v:`${ov?.alerts||0}`,ic:'🔔'},
+          ].map((c,i)=>(
+            <div key={i} className="rounded-[20px] p-4 transition-all hover:-translate-y-0.5" style={{background:T.card(dark),border:T.bd(dark),boxShadow:T.sh(dark)}}>
+              <p className={`${T.mc(dark)} text-xs uppercase tracking-wider font-medium`}>{c.l}</p>
+              <p className="text-xl font-extrabold tracking-[-0.02em] mt-1.5">{c.v}</p>
             </div>
           ))}
         </div>
 
-        {/* ===== OUTLET CARDS ===== */}
-        <div className="grid grid-cols-2 gap-6">
-          {filtered.map((outlet) => (
-            <div key={outlet.id} className="rounded-[20px] p-7 shadow-[0_10px_30px_rgba(0,0,0,0.06)] transition-all duration-[250ms] ease-[cubic-bezier(.4,0,.2,1)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1"
-              style={{ background: 'linear-gradient(180deg, #ffffff 0%, #fcfcfc 100%)', border: '1px solid rgba(255,255,255,0.7)' }}>
-              <div className="flex gap-6">
-                {/* Image */}
-                <div className="w-48 h-44 rounded-[20px] overflow-hidden flex-shrink-0 shadow-[0_8px_20px_rgba(0,0,0,0.08)] transition-all duration-[250ms] ease-[cubic-bezier(.4,0,.2,1)] hover:scale-[1.02]">
-                  <img src={outlet.image} alt={outlet.name}
-                    className="w-full h-full object-cover transition-transform duration-[400ms] ease-[cubic-bezier(.4,0,.2,1)] hover:scale-110" />
-                </div>
+        {/* ALERTS */}
+        {alerts.length>0&&<div className="mb-5 space-y-1.5">{alerts.slice(0,3).map((a,i)=>{
+          const ac=AlertColor(a.type); return(
+            <div key={i} className="rounded-2xl px-4 py-2.5 flex items-center gap-2.5 text-sm" style={{background:ac.bg}}>
+              <span>{ac.dot}</span><span className={ac.text}>{a.message}</span>
+            </div>)})}</div>}
 
-                <div className="flex-1 min-w-0">
-                  {/* Header */}
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-3">
-                        <h2 className="text-[1.35rem] font-bold tracking-[-0.01em] text-gray-900">
-                          {outlet.name}
-                        </h2>
-                        <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide">
-                          ● {outlet.status}
-                        </span>
-                      </div>
-                      <p className="text-gray-400 text-sm mt-1.5">{outlet.address}</p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <div className={`text-sm font-bold ${outlet.growth >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                        {outlet.growth >= 0 ? '▲' : '▼'} {Math.abs(outlet.growth)}%
-                      </div>
-                      <div className="text-gray-400 text-[11px] mt-0.5">vs yesterday</div>
-                    </div>
-                  </div>
-
-                  {/* Metrics */}
-                  <div className="grid grid-cols-3 gap-5 mt-6">
-                    <div>
-                      <p className="text-gray-400 text-xs uppercase tracking-wider font-medium">Today&apos;s Revenue</p>
-                      <h3 className="text-[2.2rem] font-extrabold tracking-[-0.03em] leading-tight mt-1">
-                        RM {outlet.todayRevenue.toLocaleString()}
-                      </h3>
-                    </div>
-                    <div className="flex justify-center items-start">
-                      {/* Animated Progress Ring */}
-                      <div className="relative w-[90px] h-[90px]">
-                        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                          <circle cx="50" cy="50" r="40" fill="none" stroke="#e5e7eb" strokeWidth="4" />
-                          <circle cx="50" cy="50" r="40" fill="none" stroke="#22c55e" strokeWidth="4"
-                            strokeLinecap="round" strokeDasharray={`${2 * Math.PI * 40}`}
-                            strokeDashoffset={`${2 * Math.PI * 40 * (1 - outlet.targetPct / 100)}`}
-                            className="transition-all duration-700 ease-out" />
-                        </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="font-extrabold text-lg tracking-[-0.02em]">{outlet.targetPct}%</span>
-                          <span className="text-[10px] text-gray-400 font-medium -mt-0.5">Target</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-gray-400 text-xs uppercase tracking-wider font-medium">Daily Target</p>
-                      <h3 className="text-xl font-bold tracking-[-0.01em] mt-1">RM {outlet.dailyTarget.toLocaleString()}</h3>
-                      <div className="w-full bg-gray-100 rounded-full h-[10px] mt-4 overflow-hidden shadow-inner">
-                        <div className="h-full rounded-full transition-all duration-700 ease-out"
-                          style={{ width: `${outlet.targetPct}%`, background: 'linear-gradient(90deg, #22c55e, #16a34a)' }} />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 4 Stats */}
-                  <div className="grid grid-cols-4 gap-3 mt-6">
-                    {[
-                      { label: 'Orders', value: outlet.todayOrders },
-                      { label: 'Menu', value: outlet.menuItems },
-                      { label: 'Stock', value: outlet.inventory },
-                      { label: 'Staff', value: outlet.staff },
-                    ].map((s, i) => (
-                      <div key={i} className="bg-gray-50/80 rounded-2xl py-3.5 px-3 text-center transition-all duration-[250ms] hover:bg-gray-100">
-                        <div className="text-gray-400 text-[11px] uppercase tracking-wider font-medium">{s.label}</div>
-                        <div className="font-extrabold text-xl mt-1 tracking-[-0.02em]">{s.value}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Footer */}
-                  <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100/50">
-                    <PerformanceTag tag={outlet.tag} color={outlet.tagColor} />
-                    <div className="flex gap-3">
-                      <Link href="/dashboard/analytics"
-                        className="px-5 py-[11px] rounded-2xl border border-gray-200 bg-white text-gray-700 font-medium text-sm
-                          transition-all duration-[250ms] ease-[cubic-bezier(.4,0,.2,1)]
-                          hover:bg-gray-50 hover:border-gray-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]">
-                        Analytics
-                      </Link>
-                      <button
-                        className="text-white px-6 py-[11px] rounded-2xl font-semibold text-sm
-                          transition-all duration-[250ms] ease-[cubic-bezier(.4,0,.2,1)]
-                          hover:scale-[1.03] hover:shadow-[0_8px_20px_rgba(168,106,28,0.3)]"
-                        style={{ background: 'linear-gradient(135deg, #a86a1c 0%, #d88a28 100%)' }}>
-                        Manage Outlet
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {filtered.length === 0 && (
-          <div className="text-center py-20">
-            <p className="text-gray-400 text-lg">No outlets found matching &ldquo;{search}&rdquo;</p>
+        {/* RANKING + ACTIVITY */}
+        <div className="grid grid-cols-5 gap-5 mb-7">
+          <div className="col-span-2 rounded-[20px] p-5" style={{background:T.card(dark),border:T.bd(dark),boxShadow:T.sh(dark)}}>
+            <h3 className="font-bold text-sm mb-3">🏆 Ranking</h3>
+            <div className="space-y-2">{ranking.slice(0,4).map((r,i)=>(
+              <div key={i} className="flex items-center gap-3">
+                <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${r.rank===1?'bg-amber-400 text-black':r.rank===2?'bg-gray-300 text-gray-700':r.rank===3?'bg-amber-700 text-white':'bg-gray-500/20 text-gray-400'}`}>{r.rank}</span>
+                <span className="flex-1 text-sm font-medium">{r.name}</span>
+                <span className={`text-sm font-bold ${r.score>=80?'text-green-500':r.score>=60?'text-amber-500':'text-red-500'}`}>{r.score}</span>
+              </div>))}</div>
           </div>
-        )}
+          <div className="col-span-3 rounded-[20px] p-5" style={{background:T.card(dark),border:T.bd(dark),boxShadow:T.sh(dark)}}>
+            <h3 className="font-bold text-sm mb-3 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"/>Live</h3>
+            <div className="space-y-1.5 max-h-[140px] overflow-y-auto">{activity.slice(0,6).map((a,i)=>(
+              <div key={i} className="flex items-center gap-3 text-xs py-1 border-b border-gray-500/10 last:border-0">
+                <span className="text-gray-400 w-12 flex-shrink-0">{a.time}</span>
+                <span className="text-green-500 font-semibold flex-shrink-0">{a.outlet}</span>
+                <span className="text-gray-400 truncate">{a.item}</span>
+                <span className="text-amber-500 font-semibold ml-auto">RM {a.amount}</span>
+              </div>))}</div>
+          </div>
+        </div>
+
+        {/* OUTLET CARDS */}
+        <div className="grid grid-cols-2 gap-5">
+          {filtered.map((o:any)=>{
+            const maxS=Math.max(...o.sparkline,1); const hc=o.healthScore
+            return(<div key={o.id} className="rounded-[20px] p-6 transition-all duration-[250ms] hover:-translate-y-1 relative"
+              style={{background:T.card(dark),border:T.bd(dark),boxShadow:T.sh(dark)}}>
+              {qa===o.id&&<div className="absolute top-4 right-14 z-10 rounded-2xl p-2 shadow-xl border min-w-[160px]" style={{background:dark?'#1e293b':'white',borderColor:dark?'#334155':'#e5e7eb'}} onClick={()=>setQa(null)}>
+                {['Analytics','Inventory','Staff','Report'].map(a=><button key={a} className="w-full text-left px-3 py-2 text-xs rounded-xl hover:bg-gray-500/10">{a}</button>)}</div>}
+              <div className="flex gap-4">
+                <div className="w-36 h-32 rounded-[18px] overflow-hidden flex-shrink-0 shadow-lg transition-all hover:scale-[1.02]">
+                  <img src={o.image} alt={o.name} className="w-full h-full object-cover transition-transform duration-[400ms] hover:scale-110"/></div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="relative w-[38px] h-[38px] flex-shrink-0">
+                        <svg className="w-full h-full -rotate-90" viewBox="0 0 38 38">
+                          <circle cx="19" cy="19" r="15" fill="none" stroke={dark?'#334155':'#e5e7eb'} strokeWidth="3"/>
+                          <circle cx="19" cy="19" r="15" fill="none" stroke={hc>=80?'#22c55e':hc>=60?'#eab308':'#ef4444'} strokeWidth="3" strokeLinecap="round"
+                            strokeDasharray={`${2*Math.PI*15}`} strokeDashoffset={`${2*Math.PI*15*(1-hc/100)}`} className="transition-all duration-700"/>
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center"><span className="text-[9px] font-black">{hc}</span></div>
+                      </div>
+                      <div>
+                        <h2 className="text-base font-bold">{o.name}</h2>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <svg width="70" height="24" className="opacity-50">
+                        <polyline fill="none" stroke="#d88a28" strokeWidth="1.5"
+                          points={o.sparkline.map((v:number,i:number)=>`${(i/6)*70},${24-(v/maxS)*18}`).join(' ')}/>
+                      </svg>
+                      <button onClick={()=>setQa(qa===o.id?null:o.id)} className="text-lg opacity-40 hover:opacity-100 transition">⋮</button>
+                    </div>
+                  </div>
+                  {/* Metrics */}
+                  <div className="grid grid-cols-4 gap-2 mt-3">
+                    <div><p className={`${T.mc(dark)} text-[10px] uppercase tracking-wider`}>Revenue</p>
+                      <p className="font-extrabold text-base">RM {o.todayRevenue.toLocaleString()}</p>
+                      <p className={`text-[10px] font-semibold ${o.growth>=0?'text-green-500':'text-red-500'}`}>{o.growth>=0?'▲':'▼'} {Math.abs(o.growth)}%</p></div>
+                    <div><p className={`${T.mc(dark)} text-[10px] uppercase tracking-wider`}>Orders</p><p className="font-extrabold text-base">{o.todayOrders}</p></div>
+                    <div><p className={`${T.mc(dark)} text-[10px] uppercase tracking-wider`}>Stock</p><p className="font-extrabold text-base">{o.inventory}</p>
+                      {o.lowStockItems?.length>0&&<p className="text-red-400 text-[10px] font-semibold">⚠ {o.lowStockItems.length} low</p>}</div>
+                    <div><p className={`${T.mc(dark)} text-[10px] uppercase tracking-wider`}>Staff</p><p className="font-extrabold text-base">{o.staff}</p></div>
+                  </div>
+                  {/* Progress */}
+                  <div className="mt-2.5">
+                    <div className="flex justify-between text-[11px] mb-1"><span className={T.mc(dark)}>Target RM {o.dailyTarget.toLocaleString()}</span><span className="font-semibold">{o.targetPct}%</span></div>
+                    <div className="w-full rounded-full h-2 overflow-hidden" style={{background:dark?'#1e293b':'#e5e7eb'}}>
+                      <div className="h-full rounded-full transition-all duration-700" style={{width:`${o.targetPct}%`,background:o.targetPct>=80?'linear-gradient(90deg,#22c55e,#16a34a)':o.targetPct>=50?'linear-gradient(90deg,#eab308,#d97706)':'linear-gradient(90deg,#ef4444,#dc2626)'}}/></div>
+                  </div>
+                  {/* Low stock chips */}
+                  {o.lowStockItems?.length>0&&<div className="flex flex-wrap gap-1 mt-1.5">{o.lowStockItems.map((i:any,idx:number)=>(
+                    <span key={idx} className="bg-rose-500/10 text-rose-500 text-[9px] px-2 py-0.5 rounded-full font-medium">⚠ {i.name} ({i.qty}{i.unit})</span>
+                  ))}</div>}
+                  {/* Footer */}
+                  <div className="flex items-center justify-between mt-3 pt-2.5 border-t" style={{borderColor:dark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.05)'}}>
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wide border ${
+                      o.tagColor==='amber'?dark?'bg-amber-500/10 text-amber-400 border-amber-500/20':'bg-amber-50 text-amber-700 border-amber-200/50'
+                      :o.tagColor==='blue'?dark?'bg-blue-500/10 text-blue-400 border-blue-500/20':'bg-blue-50 text-blue-700 border-blue-200/50'
+                      :dark?'bg-red-500/10 text-red-400 border-red-500/20':'bg-red-50 text-red-700 border-red-200/50'}`}>{o.tag}</span>
+                    <div className="flex gap-2">
+                      <Link href="/dashboard/analytics" className={`px-3.5 py-1.5 rounded-2xl text-xs font-semibold transition-all hover:shadow-md ${dark?'border border-gray-700 text-gray-300 hover:bg-gray-800':'border border-gray-200 text-gray-700 hover:bg-gray-50'}`}>Analytics</Link>
+                      <button className="text-white px-4 py-1.5 rounded-2xl font-semibold text-xs transition-all hover:scale-[1.02]"
+                        style={{background:'linear-gradient(135deg,#a86a1c 0%,#d88a28 100%)'}}>Manage</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>)
+          })}
+        </div>
+
+        {filtered.length===0&&<div className="text-center py-20"><p className={T.mc(dark)}>No outlets matching &ldquo;{search}&rdquo;</p></div>}
       </div>
     </div>
-  )
-}
-
-function PerformanceTag({ tag, color }: { tag: string; color: string }) {
-  const styles: Record<string, string> = {
-    amber: 'bg-amber-50 text-amber-700 border border-amber-200/50',
-    blue: 'bg-blue-50 text-blue-700 border border-blue-200/50',
-    red: 'bg-red-50 text-red-700 border border-red-200/50',
-  }
-  return (
-    <span className={`px-4 py-2 rounded-full text-xs font-bold tracking-wide ${styles[color] || 'bg-gray-50 text-gray-600 border border-gray-200/50'}`}>
-      {tag}
-    </span>
   )
 }
