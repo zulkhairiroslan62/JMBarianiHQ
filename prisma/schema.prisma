@@ -1,3 +1,34 @@
+
+
+model Recipe {
+  id          String   @id @default(cuid())
+  menuItemId  String   @unique
+  menuItem    MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  name        String
+  servings    Float    @default(1)
+  prepTime    Int?
+  instructions String?
+  costPrice   Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  ingredients RecipeIngredient[]
+
+  @@map("recipes")
+}
+
+model RecipeIngredient {
+  id             String   @id @default(cuid())
+  recipeId       String
+  recipe         Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ingredientName String
+  quantity       Float
+  unit           String
+  costPerUnit    Float?
+  notes          String?
+
+  @@map("recipe_ingredients")
+}
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -51,6 +82,7 @@ model MenuItem {
   outletId  String
   outlet    Outlet   @relation(fields: [outletId], references: [id], onDelete: Cascade)
   sales     Sale[]
+  recipe    Recipe?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
