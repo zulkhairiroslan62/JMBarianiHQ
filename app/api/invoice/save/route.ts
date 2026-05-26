@@ -93,7 +93,12 @@ export async function POST(request: NextRequest) {
 
     // Lookup user to get outlet
     const user = await prisma.user.findUnique({ where: { email: session.user.email } })
-    const effOutletId = outletId || user?.outletId || null
+    // Use outletId from request, user, or fallback to first outlet
+    let effOutletId = outletId || user?.outletId || null
+    if (!effOutletId) {
+      const firstOutlet = await prisma.outlet.findFirst({ select: { id: true } })
+      if (firstOutlet) effOutletId = firstOutlet.id
+    }
 
     // Save invoice to database
     const invoice = await prisma.invoice.create({
