@@ -27,6 +27,11 @@ interface RealtimeData {
     quantity: number
     amount: number
   }>
+  outletBreakdown: Array<{
+    name: string
+    revenue: number
+    orders: number
+  }>
   lastUpdated: string
 }
 
@@ -185,6 +190,42 @@ export default function RealTimeDashboard() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Sales by Outlet */}
+      <div className="bg-[hsl(var(--color-background-primary))] border border-[hsl(var(--color-border-tertiary))] rounded-lg p-4">
+        <p className="text-sm font-medium text-[hsl(var(--color-text-primary))] mb-3">
+          Sales by Outlet — Today
+        </p>
+        <div className="grid grid-cols-4 gap-3">
+          {data.outletBreakdown.map((outlet, idx) => {
+            const colors = ['#C8440A', '#185FA5', '#1D9E75', '#BA7517']
+            const percentage = data.totalRevenue > 0 
+              ? Math.round((outlet.revenue / data.totalRevenue) * 100)
+              : 0
+            
+            return (
+              <div key={idx} className="bg-[hsl(var(--color-background-secondary))] rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div 
+                    className="w-2 h-2 rounded-full" 
+                    style={{ backgroundColor: colors[idx % colors.length] }}
+                  ></div>
+                  <p className="text-xs font-medium text-[hsl(var(--color-text-primary))]">
+                    {outlet.name}
+                  </p>
+                </div>
+                <p className="text-lg font-bold text-[hsl(var(--color-text-primary))] mb-1">
+                  {formatCurrency(outlet.revenue)}
+                </p>
+                <div className="flex items-center justify-between text-[10px] text-[hsl(var(--color-text-tertiary))]">
+                  <span>{outlet.orders} orders</span>
+                  <span className="font-medium text-[#7B3F00]">{percentage}%</span>
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
 

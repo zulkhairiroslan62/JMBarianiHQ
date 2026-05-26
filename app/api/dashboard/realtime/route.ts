@@ -81,12 +81,31 @@ export async function GET() {
       amount: sale.total,
     }))
 
+    // Calculate sales by outlet
+    const outletSales: { [key: string]: { name: string; revenue: number; orders: number } } = {}
+    
+    todaySales.forEach(sale => {
+      const outletId = sale.outletId
+      if (!outletSales[outletId]) {
+        outletSales[outletId] = {
+          name: sale.outlet.name,
+          revenue: 0,
+          orders: 0,
+        }
+      }
+      outletSales[outletId].revenue += sale.total
+      outletSales[outletId].orders += 1
+    })
+
+    const outletBreakdown = Object.values(outletSales).sort((a, b) => b.revenue - a.revenue)
+
     return NextResponse.json({
       totalRevenue,
       totalOrders,
       peakHoursData,
       bestSelling,
       latestSales,
+      outletBreakdown,
       lastUpdated: now.toISOString(),
     })
   } catch (error) {
