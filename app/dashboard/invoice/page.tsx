@@ -1,24 +1,75 @@
 'use client'
 
 import { useState } from 'react'
+import { useSession } from 'next-auth/react'
+
+interface OCRResult {
+  supplier: string
+  invoiceNumber: string | null
+  date: string | null
+  items: Array<{
+    name: string
+    quantity: number
+    unit: string
+    price: number
+    subtotal: number
+  }>
+  total: number
+  confidence: number
+}
 
 export default function InvoicePage() {
+  const { data: session } = useSession()
   const [uploading, setUploading] = useState(false)
   const [processing, setProcessing] = useState(false)
+  const [ocrResult, setOcrResult] = useState<OCRResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const invoices = [
-    { id: 'INV-001', supplier: 'Fresh Mart Sdn Bhd', status: 'PENDING', confidence: 96, items: 8, total: 2450, date: '2026-05-26' },
-    { id: 'INV-002', supplier: 'Spice World Trading', status: 'PENDING', confidence: 89, items: 5, total: 890, date: '2026-05-25' },
-    { id: 'INV-003', supplier: 'Meat Supply Co', status: 'APPROVED', confidence: 98, items: 12, total: 3200, date: '2026-05-24' },
-    { id: 'INV-004', supplier: 'Fresh Mart Sdn Bhd', status: 'APPROVED', confidence: 95, items: 6, total: 1850, date: '2026-05-23' },
-  ]
+  const handleFileUpload = async (file: File) => {
+    setError(null)
+    setUploading(true)
+    setProcessing(false)
+    setOcrResult(null)
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'PENDING': return 'bg-[#FEF3E8] text-[#854F0B]'
-      case 'APPROVED': return 'bg-[#EAF3DE] text-[#27500A]'
-      case 'REJECTED': return 'bg-[#FDEAEA] text-[#A32D2D]'
-      default: return 'bg-[hsl(var(--color-background-secondary))] text-[hsl(var(--color-text-secondary))]'
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      setUploading(false)
+      setProcessing(true)
+
+      const response = await fetch('/api/invoice/ocr', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'OCR failed')
+      }
+
+      setOcrResult(result.data)
+      setProcessing(false)
+    } catch (err: any) {
+      setError(err.message)
+      setUploading(false)
+      setProcessing(false)
+    }
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    const file = e.dataTransfer.files[0]
+    if (file && file.type.startsWith('image/')) {
+      handleFileUpload(file)
+    }
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      handleFileUpload(file)
     }
   }
 
@@ -46,29 +97,39 @@ export default function InvoicePage() {
       </div>
 
       {/* Upload Section */}
-      <div className="bg-[hsl(var(--color-background-primary))] border border-[hsl(var(--color-border-tertiary))] rounded-lg p-6">
-        <div className="border-2 border-dashed border-[hsl(var(--color-border-secondary))] rounded-lg p-8 text-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-12 h-12 bg-[hsl(var(--color-background-secondary))] rounded-full flex items-center justify-center">
-              <i className="ti ti-upload text-2xl text-[hsl(var(--color-text-secondary))]" aria-hidden="true"></i>
+      {!ocrResult && (
+        <div className="bg-[hsl(var(--color-background-primary))] border border-[hsl(var(--color-border-tertiary))] rounded-lg p-6">
+          <div 
+            className="border-2 border-dashed border-[hsl(var(--color-border-secondary))] rounded-lg p-8 text-center"
+            onDrop={handleDrop}
+            onDragOver={(e) => e.preventDefault()}
+          >
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-12 h-12 bg-[hsl(var(--color-background-secondary))] rounded-full flex items-center justify-center">
+                <i className="ti ti-upload text-2xl text-[hsl(var(--color-text-secondary))]" aria-hidden="true"></i>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-[hsl(var(--color-text-primary))] mb-1">
+                  Upload Invoice
+                </p>
+                <p className="text-xs text-[hsl(var(--color-text-tertiary))]">
+                  Drag and drop or click to browse • JPG, PNG, WebP
+                </p>
+              </div>
+              <label className="bg-[#7B3F00] text-[#FAC775] px-4 py-2 rounded-md text-sm font-medium hover:bg-[#8B4A00] cursor-pointer">
+                {uploading ? 'Uploading...' : processing ? 'Processing with AI...' : 'Select File'}
+                <input 
+                  type="file" 
+                  className="hidden" 
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  disabled={uploading || processing}
+                />
+              </label>
             </div>
-            <div>
-              <p className="text-sm font-medium text-[hsl(var(--color-text-primary))] mb-1">
-                Upload Invoice
-              </p>
-              <p className="text-xs text-[hsl(var(--color-text-tertiary))]">
-                Drag and drop or click to browse • PDF, JPG, PNG
-              </p>
-            </div>
-            <button 
-              className="bg-[#7B3F00] text-[#FAC775] px-4 py-2 rounded-md text-sm font-medium hover:bg-[#8B4A00]"
-              disabled={uploading || processing}
-            >
-              {uploading ? 'Uploading...' : processing ? 'Processing with AI...' : 'Select File'}
-            </button>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Processing Steps */}
       {processing && (
@@ -76,7 +137,7 @@ export default function InvoicePage() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
               <div className="w-7 h-7 rounded-full bg-[#7B3F00] flex items-center justify-center text-xs font-medium text-[#FAC775]">
-                1
+                ✓
               </div>
               <span className="text-sm text-[hsl(var(--color-text-primary))]">Upload</span>
             </div>
@@ -98,65 +159,118 @@ export default function InvoicePage() {
         </div>
       )}
 
-      {/* Invoice List */}
-      <div className="bg-[hsl(var(--color-background-primary))] border border-[hsl(var(--color-border-tertiary))] rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-[hsl(var(--color-border-tertiary))] bg-[hsl(var(--color-background-secondary))]">
-                <th className="text-left text-[10.5px] font-medium text-[hsl(var(--color-text-tertiary))] px-4 py-3">Invoice ID</th>
-                <th className="text-left text-[10.5px] font-medium text-[hsl(var(--color-text-tertiary))] px-4 py-3">Supplier</th>
-                <th className="text-left text-[10.5px] font-medium text-[hsl(var(--color-text-tertiary))] px-4 py-3">Status</th>
-                <th className="text-left text-[10.5px] font-medium text-[hsl(var(--color-text-tertiary))] px-4 py-3">Confidence</th>
-                <th className="text-left text-[10.5px] font-medium text-[hsl(var(--color-text-tertiary))] px-4 py-3">Items</th>
-                <th className="text-left text-[10.5px] font-medium text-[hsl(var(--color-text-tertiary))] px-4 py-3">Total</th>
-                <th className="text-left text-[10.5px] font-medium text-[hsl(var(--color-text-tertiary))] px-4 py-3">Date</th>
-                <th className="text-left text-[10.5px] font-medium text-[hsl(var(--color-text-tertiary))] px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {invoices.map((invoice) => (
-                <tr key={invoice.id} className="border-b border-[hsl(var(--color-border-tertiary))] hover:bg-[hsl(var(--color-background-secondary))]">
-                  <td className="px-4 py-3 text-sm font-medium text-[hsl(var(--color-text-primary))]">{invoice.id}</td>
-                  <td className="px-4 py-3 text-sm text-[hsl(var(--color-text-secondary))]">{invoice.supplier}</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-[10px] px-2 py-1 rounded ${getStatusColor(invoice.status)}`}>
-                      {invoice.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`text-sm font-medium ${getConfidenceColor(invoice.confidence)}`}>
-                      {invoice.confidence}%
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-[hsl(var(--color-text-secondary))]">{invoice.items} items</td>
-                  <td className="px-4 py-3 text-sm font-medium text-[hsl(var(--color-text-primary))]">
-                    RM {invoice.total.toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-[hsl(var(--color-text-tertiary))]">{invoice.date}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      {invoice.status === 'PENDING' && (
-                        <>
-                          <button className="text-[#27500A] hover:text-[#3B6D11] text-xs font-medium">
-                            Approve
-                          </button>
-                          <button className="text-[#A32D2D] hover:text-[#C13838] text-xs font-medium">
-                            Reject
-                          </button>
-                        </>
-                      )}
-                      <button className="text-[#7B3F00] hover:text-[#8B4A00] text-xs font-medium">
-                        View
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Error Display */}
+      {error && (
+        <div className="bg-[#FDEAEA] border border-[#A32D2D] rounded-lg p-4">
+          <div className="flex items-start gap-2">
+            <i className="ti ti-alert-circle text-[#A32D2D] text-lg" aria-hidden="true"></i>
+            <div>
+              <p className="text-sm font-medium text-[#A32D2D] mb-1">OCR Failed</p>
+              <p className="text-xs text-[#A32D2D]">{error}</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => setError(null)}
+            className="mt-3 text-sm text-[#7B3F00] hover:text-[#8B4A00] font-medium"
+          >
+            Try Again
+          </button>
         </div>
-      </div>
+      )}
+
+      {/* OCR Results */}
+      {ocrResult && (
+        <div className="space-y-4">
+          <div className="bg-[hsl(var(--color-background-primary))] border border-[hsl(var(--color-border-tertiary))] rounded-lg p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium text-[hsl(var(--color-text-primary))]">Extracted Data</h3>
+              <div className="flex items-center gap-2">
+                <span className={`text-sm font-medium ${getConfidenceColor(ocrResult.confidence)}`}>
+                  Confidence: {ocrResult.confidence}%
+                </span>
+                <button 
+                  onClick={() => setOcrResult(null)}
+                  className="text-xs text-[hsl(var(--color-text-tertiary))] hover:text-[hsl(var(--color-text-primary))]"
+                >
+                  Upload New
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div>
+                <label className="block text-xs font-medium text-[hsl(var(--color-text-secondary))] mb-1.5">
+                  Supplier
+                </label>
+                <input
+                  type="text"
+                  value={ocrResult.supplier}
+                  className="w-full px-3 py-2 text-sm border border-[hsl(var(--color-border-tertiary))] rounded-md bg-[hsl(var(--color-background-secondary))] text-[hsl(var(--color-text-primary))]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[hsl(var(--color-text-secondary))] mb-1.5">
+                  Invoice Number
+                </label>
+                <input
+                  type="text"
+                  value={ocrResult.invoiceNumber || ''}
+                  className="w-full px-3 py-2 text-sm border border-[hsl(var(--color-border-tertiary))] rounded-md bg-[hsl(var(--color-background-secondary))] text-[hsl(var(--color-text-primary))]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[hsl(var(--color-text-secondary))] mb-1.5">
+                  Date
+                </label>
+                <input
+                  type="text"
+                  value={ocrResult.date || ''}
+                  className="w-full px-3 py-2 text-sm border border-[hsl(var(--color-border-tertiary))] rounded-md bg-[hsl(var(--color-background-secondary))] text-[hsl(var(--color-text-primary))]"
+                />
+              </div>
+            </div>
+
+            <div className="border border-[hsl(var(--color-border-tertiary))] rounded-lg overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-[hsl(var(--color-background-secondary))] border-b border-[hsl(var(--color-border-tertiary))]">
+                    <th className="text-left text-[10.5px] font-medium text-[hsl(var(--color-text-tertiary))] px-3 py-2">Item</th>
+                    <th className="text-left text-[10.5px] font-medium text-[hsl(var(--color-text-tertiary))] px-3 py-2">Qty</th>
+                    <th className="text-left text-[10.5px] font-medium text-[hsl(var(--color-text-tertiary))] px-3 py-2">Unit</th>
+                    <th className="text-left text-[10.5px] font-medium text-[hsl(var(--color-text-tertiary))] px-3 py-2">Price</th>
+                    <th className="text-left text-[10.5px] font-medium text-[hsl(var(--color-text-tertiary))] px-3 py-2">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ocrResult.items.map((item, idx) => (
+                    <tr key={idx} className="border-b border-[hsl(var(--color-border-tertiary))] last:border-0">
+                      <td className="px-3 py-2 text-sm text-[hsl(var(--color-text-primary))]">{item.name}</td>
+                      <td className="px-3 py-2 text-sm text-[hsl(var(--color-text-secondary))]">{item.quantity}</td>
+                      <td className="px-3 py-2 text-sm text-[hsl(var(--color-text-secondary))]">{item.unit}</td>
+                      <td className="px-3 py-2 text-sm text-[hsl(var(--color-text-secondary))]">RM {item.price.toFixed(2)}</td>
+                      <td className="px-3 py-2 text-sm font-medium text-[hsl(var(--color-text-primary))]">RM {item.subtotal.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                  <tr className="bg-[hsl(var(--color-background-secondary))]">
+                    <td colSpan={4} className="px-3 py-2 text-sm font-medium text-[hsl(var(--color-text-primary))] text-right">Total</td>
+                    <td className="px-3 py-2 text-sm font-semibold text-[hsl(var(--color-text-primary))]">RM {ocrResult.total.toFixed(2)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex gap-3 mt-4">
+              <button className="flex-1 bg-[#27500A] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#3B6D11]">
+                <i className="ti ti-check text-sm mr-1" aria-hidden="true"></i>
+                Approve & Update Inventory
+              </button>
+              <button className="bg-transparent border border-[#A32D2D] text-[#A32D2D] px-4 py-2 rounded-md text-sm font-medium hover:bg-[#A32D2D] hover:text-white">
+                Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
