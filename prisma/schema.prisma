@@ -110,6 +110,14 @@ model Invoice {
   ocrData       String?
   confidence    Float?
   status        String        @default("PENDING")
+  outletId      String?
+  paidAmount    Float?
+  paidAt        DateTime?
+  paymentMethod String?
+  dueDate       DateTime?
+  paymentNotes  String?
+  revokedAt     DateTime?
+  revokedNote   String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   items         InvoiceItem[]
