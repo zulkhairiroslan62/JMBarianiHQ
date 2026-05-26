@@ -1,14 +1,25 @@
-'use client'
+import { prisma } from '@/lib/prisma'
 
-export default function MenuPage() {
-  const menuItems = [
-    { name: 'Nasi Briyani Ayam', price: 15, cost: 6, margin: 60, category: 'Main', status: 'ACTIVE', soldToday: 145 },
-    { name: 'Nasi Briyani Kambing', price: 18, cost: 8, margin: 55.6, category: 'Main', status: 'ACTIVE', soldToday: 98 },
-    { name: 'Nasi Briyani Daging', price: 17, cost: 7.5, margin: 55.9, category: 'Main', status: 'ACTIVE', soldToday: 112 },
-    { name: 'Roti Canai', price: 2.5, cost: 0.8, margin: 68, category: 'Side', status: 'ACTIVE', soldToday: 234 },
-    { name: 'Teh Tarik', price: 3, cost: 0.5, margin: 83.3, category: 'Beverage', status: 'ACTIVE', soldToday: 189 },
-    { name: 'Milo Ais', price: 3.5, cost: 0.7, margin: 80, category: 'Beverage', status: 'ACTIVE', soldToday: 156 },
-  ]
+export default async function MenuPage() {
+  // Fetch menu items from first outlet (Subang Jaya HQ)
+  const outlet = await prisma.outlet.findFirst({
+    where: { name: 'Subang Jaya (HQ)' },
+  })
+
+  const menuItems = await prisma.menuItem.findMany({
+    where: {
+      outletId: outlet?.id,
+    },
+    orderBy: {
+      category: 'asc',
+    },
+  })
+
+  // Calculate summary stats
+  const totalItems = menuItems.length
+  const avgMargin = menuItems.reduce((sum, item) => sum + item.margin, 0) / totalItems
+  const bestSeller = menuItems[0] // Simplified - in real app would track actual sales
+  const soldToday = Math.floor(Math.random() * 500) + 500 // Mock data
 
   const getMarginColor = (margin: number) => {
     if (margin >= 70) return 'text-[#27500A]'
@@ -35,19 +46,19 @@ export default function MenuPage() {
       <div className="grid grid-cols-4 gap-3">
         <div className="bg-[hsl(var(--color-background-primary))] border border-[hsl(var(--color-border-tertiary))] rounded-lg p-3">
           <p className="text-[10.5px] text-[hsl(var(--color-text-tertiary))] mb-1">Total Items</p>
-          <p className="text-2xl font-semibold text-[hsl(var(--color-text-primary))]">24</p>
+          <p className="text-2xl font-semibold text-[hsl(var(--color-text-primary))]">{totalItems}</p>
         </div>
         <div className="bg-[hsl(var(--color-background-primary))] border border-[hsl(var(--color-border-tertiary))] rounded-lg p-3">
           <p className="text-[10.5px] text-[hsl(var(--color-text-tertiary))] mb-1">Avg Margin</p>
-          <p className="text-2xl font-semibold text-[#27500A]">67.1%</p>
+          <p className="text-2xl font-semibold text-[#27500A]">{avgMargin.toFixed(1)}%</p>
         </div>
         <div className="bg-[hsl(var(--color-background-primary))] border border-[hsl(var(--color-border-tertiary))] rounded-lg p-3">
           <p className="text-[10.5px] text-[hsl(var(--color-text-tertiary))] mb-1">Best Seller</p>
-          <p className="text-sm font-semibold text-[hsl(var(--color-text-primary))]">Roti Canai</p>
+          <p className="text-sm font-semibold text-[hsl(var(--color-text-primary))]">{bestSeller?.name || 'N/A'}</p>
         </div>
         <div className="bg-[hsl(var(--color-background-primary))] border border-[hsl(var(--color-border-tertiary))] rounded-lg p-3">
           <p className="text-[10.5px] text-[hsl(var(--color-text-tertiary))] mb-1">Sold Today</p>
-          <p className="text-2xl font-semibold text-[hsl(var(--color-text-primary))]">934</p>
+          <p className="text-2xl font-semibold text-[hsl(var(--color-text-primary))]">{soldToday}</p>
         </div>
       </div>
 
@@ -68,30 +79,37 @@ export default function MenuPage() {
               </tr>
             </thead>
             <tbody>
-              {menuItems.map((item, idx) => (
-                <tr key={idx} className="border-b border-[hsl(var(--color-border-tertiary))] hover:bg-[hsl(var(--color-background-secondary))]">
-                  <td className="px-4 py-3 text-sm font-medium text-[hsl(var(--color-text-primary))]">{item.name}</td>
-                  <td className="px-4 py-3 text-sm text-[hsl(var(--color-text-secondary))]">{item.category}</td>
-                  <td className="px-4 py-3 text-sm text-[hsl(var(--color-text-primary))]">RM {item.price.toFixed(2)}</td>
-                  <td className="px-4 py-3 text-sm text-[hsl(var(--color-text-secondary))]">RM {item.cost.toFixed(2)}</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-sm font-medium ${getMarginColor(item.margin)}`}>
-                      {item.margin.toFixed(1)}%
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-[hsl(var(--color-text-secondary))]">{item.soldToday}</td>
-                  <td className="px-4 py-3">
-                    <span className="text-[10px] px-2 py-1 rounded bg-[#EAF3DE] text-[#27500A]">
-                      {item.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <button className="text-[#7B3F00] hover:text-[#8B4A00] text-xs font-medium">
-                      Edit
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {menuItems.map((item) => {
+                const soldTodayRandom = Math.floor(Math.random() * 150) + 50
+                return (
+                  <tr key={item.id} className="border-b border-[hsl(var(--color-border-tertiary))] hover:bg-[hsl(var(--color-background-secondary))]">
+                    <td className="px-4 py-3 text-sm font-medium text-[hsl(var(--color-text-primary))]">{item.name}</td>
+                    <td className="px-4 py-3 text-sm text-[hsl(var(--color-text-secondary))]">{item.category}</td>
+                    <td className="px-4 py-3 text-sm text-[hsl(var(--color-text-primary))]">RM {item.price.toFixed(2)}</td>
+                    <td className="px-4 py-3 text-sm text-[hsl(var(--color-text-secondary))]">RM {item.cost.toFixed(2)}</td>
+                    <td className="px-4 py-3">
+                      <span className={`text-sm font-medium ${getMarginColor(item.margin)}`}>
+                        {item.margin.toFixed(1)}%
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-[hsl(var(--color-text-secondary))]">{soldTodayRandom}</td>
+                    <td className="px-4 py-3">
+                      <span className={`text-[10px] px-2 py-1 rounded ${
+                        item.status === 'ACTIVE' 
+                          ? 'bg-[#EAF3DE] text-[#27500A]' 
+                          : 'bg-[#FEE] text-[#A00]'
+                      }`}>
+                        {item.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <button className="text-[#7B3F00] hover:text-[#8B4A00] text-xs font-medium">
+                        Edit
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
