@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("STAFF")
+  outletId  String?
+  outlet    Outlet?  @relation(fields: [outletId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Outlet {
+  id           String         @id @default(cuid())
+  name         String
+  address      String
+  targetDaily  Float          @default(0)
+  status       String         @default("ACTIVE")
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  users        User[]
+  menuItems    MenuItem[]
+  inventory    Inventory[]
+  stockOrders  StockOrder[]
+  staff        Staff[]
+  sales        Sale[]
+  wasteLogs    WasteLog[]
+
+  @@map("outlets")
+}
+
+model MenuItem {
+  id        String   @id @default(cuid())
+  name      String
+  price     Float
+  cost      Float
+  margin    Float    @default(0)
+  category  String?
+  status    String   @default("ACTIVE")
+  outletId  String
+  outlet    Outlet   @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  sales     Sale[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("menu_items")
+}
+
+model Inventory {
+  id          String       @id @default(cuid())
+  itemName    String
+  quantity    Float
+  unit        String
+  shelfLife   DateTime?
+  status      String       @default("SUFFICIENT")
+  outletId    String
+  outlet      Outlet       @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  stockOrders StockOrder[]
+  wasteLogs   WasteLog[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("inventory")
+}
+
+model StockOrder {
+  id              String    @id @default(cuid())
+  inventoryId     String
+  inventory       Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  quantityOrdered Float
+  aiSuggested     Boolean   @default(false)
+  status          String    @default("PENDING")
+  outletId        String
+  outlet          Outlet    @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("stock_orders")
+}
+
+model PurchaseOrder {
+  id           String   @id @default(cuid())
+  supplierId   String?
+  supplierName String
+  status       String   @default("PENDING")
+  total        Float    @default(0)
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("purchase_orders")
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  supplier      String
+  invoiceNumber String?
+  rawImageUrl   String
+  ocrData       String?
+  confidence    Float?
+  status        String        @default("PENDING")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  items         InvoiceItem[]
+
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id        String   @id @default(cuid())
+  invoiceId String
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  name      String
+  quantity  Float
+  unit      String
+  price     Float
+  subtotal  Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("invoice_items")
+}
+
+model Staff {
+  id         String       @id @default(cuid())
+  name       String
+  role       String
+  shift      String       @default("FULL")
+  outletId   String
+  outlet     Outlet       @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  attendance Attendance[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@map("staff")
+}
+
+model Attendance {
+  id        String   @id @default(cuid())
+  staffId   String
+  staff     Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  date      DateTime
+  status    String   @default("PRESENT")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("attendance")
+}
+
+model Sale {
+  id         String   @id @default(cuid())
+  outletId   String
+  outlet     Outlet   @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  quantity   Int
+  total      Float
+  date       DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("sales")
+}
+
+model WasteLog {
+  id          String    @id @default(cuid())
+  outletId    String
+  outlet      Outlet    @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  inventoryId String
+  inventory   Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  quantity    Float
+  reason      String?
+  date        DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("waste_logs")
+}
