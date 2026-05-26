@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { authOptions } from '@/lib/auth'
 import Anthropic from '@anthropic-ai/sdk'
 
 const anthropic = new Anthropic({
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const base64 = buffer.toString('base64')
 
     // Determine media type
-    let mediaType = 'image/jpeg'
+    let mediaType: string = "image/jpeg"
     if (file.type === 'image/png') mediaType = 'image/png'
     else if (file.type === 'image/webp') mediaType = 'image/webp'
     else if (file.type === 'image/gif') mediaType = 'image/gif'
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
               type: 'image',
               source: {
                 type: 'base64',
-                media_type: mediaType,
+                media_type: mediaType as any,
                 data: base64,
               },
             },

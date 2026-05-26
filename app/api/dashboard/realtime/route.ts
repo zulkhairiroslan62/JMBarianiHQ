@@ -59,7 +59,7 @@ export async function GET() {
           name: sale.menuItem.name,
           quantity: 0,
           revenue: 0,
-          category: sale.menuItem.category,
+          category: sale.menuItem.category ?? "Uncategorized",
         }
       }
       itemSales[itemId].quantity += sale.quantity
