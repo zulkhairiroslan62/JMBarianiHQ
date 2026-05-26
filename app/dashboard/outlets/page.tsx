@@ -33,145 +33,152 @@ export default function OutletsPage() {
     o.address.toLowerCase().includes(search.toLowerCase())
   )
 
-  const tagStyles: Record<string, string> = {
-    amber: 'bg-amber-100 text-amber-700',
-    blue: 'bg-blue-100 text-blue-700',
-    red: 'bg-red-100 text-red-700',
-  }
-
-  if (loading) return <div className="min-h-screen bg-[#f5f6f8] p-8"><p className="text-gray-500">Loading outlets...</p></div>
-
   return (
-    <div className="min-h-screen bg-[#f5f6f8]" style={{ fontFamily: "'Inter', sans-serif" }}>
-      <div className="p-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen text-gray-900" style={{ background: '#f5f6f8', fontFamily: "'Inter', sans-serif" }}>
+      <div className="max-w-[1600px] mx-auto p-8">
+
+        {/* ===== HEADER ===== */}
+        <div className="flex items-center justify-between mb-10">
           <div>
-            <h1 className="text-4xl font-extrabold text-gray-900">Outlets</h1>
-            <p className="text-gray-500 mt-1">Monitor all restaurant branches in real-time.</p>
+            <h1 className="text-[2.5rem] font-extrabold tracking-[-0.03em] text-gray-900">Outlets</h1>
+            <p className="text-gray-500 mt-1.5">Monitor all restaurant branches in real-time.</p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="bg-white rounded-2xl px-5 py-3 shadow-sm border border-gray-100 w-80">
+            <div className="bg-white rounded-2xl px-5 py-3 shadow-[0_4px_12px_rgba(0,0,0,0.04)] border border-gray-100 w-80">
               <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-                placeholder="Search outlets..." className="w-full outline-none text-sm bg-transparent" />
+                placeholder="Search outlets..." className="w-full outline-none text-sm bg-transparent placeholder:text-gray-400" />
             </div>
-            <button className="text-white px-6 py-3 rounded-2xl font-semibold shadow-lg hover:scale-105 transition duration-200"
-              style={{ background: 'linear-gradient(135deg, #9a5b13 0%, #c77b1d 100%)' }}>
-              <i className="ti ti-plus mr-1"></i> Add Outlet
+            <button className="text-white px-7 py-[14px] rounded-2xl font-semibold shadow-lg transition-all duration-[250ms] ease-[cubic-bezier(.4,0,.2,1)] hover:scale-[1.03] hover:shadow-[0_8px_25px_rgba(168,106,28,0.35)]"
+              style={{ background: 'linear-gradient(135deg, #a86a1c 0%, #d88a28 100%)' }}>
+              <span className="mr-1.5">+</span> Add Outlet
             </button>
           </div>
         </div>
 
-        {/* Overview Cards */}
-        <div className="grid grid-cols-4 gap-5 mb-8">
+        {/* ===== OVERVIEW CARDS ===== */}
+        <div className="grid grid-cols-4 gap-6 mb-10">
           {[
-            { label: 'Total Revenue', value: `RM ${(overview?.totalRevenue || 0).toLocaleString()}`, badge: '▲ vs yesterday', badgeColor: 'text-green-600', icon: '💰', bg: 'bg-green-100' },
-            { label: 'Orders Today', value: `${overview?.totalOrders || 0}`, badge: '▲ All outlets', badgeColor: 'text-green-600', icon: '📦', bg: 'bg-blue-100' },
-            { label: 'Top Outlet', value: overview?.topOutlet?.name || '-', badge: '🔥 Best Today', badgeColor: 'text-amber-600', icon: '🏆', bg: 'bg-amber-100' },
-            { label: 'Alerts', value: `${overview?.alerts || 0}`, badge: 'Needs attention', badgeColor: 'text-red-500', icon: '⚠️', bg: 'bg-red-100' },
+            { label: 'Total Revenue', value: `RM ${(overview?.totalRevenue || 0).toLocaleString()}`, badge: '+12.6% vs yesterday', icon: '💰', iconBg: '#dcfce7', col: '#22c55e' },
+            { label: 'Orders Today', value: `${overview?.totalOrders || 0}`, badge: '+8.4% vs yesterday', icon: '📦', iconBg: '#dbeafe', col: '#3b82f6' },
+            { label: 'Top Outlet', value: overview?.topOutlet?.name || '-', badge: '🔥 Best Seller Today', icon: '🏆', iconBg: '#fef3c7', col: '#d97706' },
+            { label: 'Alerts', value: `${overview?.alerts || 0}`, badge: 'Needs attention', icon: '⚠️', iconBg: '#fee2e2', col: '#ef4444', badgeCol: 'text-red-500' },
           ].map((card, i) => (
-            <div key={i} className="rounded-3xl p-6 shadow-sm" style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.6)' }}>
+            <div key={i} className="rounded-[20px] p-6 shadow-[0_10px_30px_rgba(0,0,0,0.06)] transition-all duration-[250ms] ease-[cubic-bezier(.4,0,.2,1)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.09)] hover:-translate-y-0.5"
+              style={{ background: 'linear-gradient(180deg, #ffffff 0%, #fcfcfc 100%)', border: '1px solid rgba(255,255,255,0.7)' }}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-500 text-sm">{card.label}</p>
-                  <h2 className="text-3xl font-extrabold mt-2">{card.value}</h2>
-                  <p className={`${card.badgeColor} text-sm mt-2`}>{card.badge}</p>
+                  <p className="text-gray-500 text-xs tracking-wide uppercase font-medium">{card.label}</p>
+                  <h2 className="text-[1.75rem] font-extrabold tracking-[-0.02em] mt-2">{card.value}</h2>
+                  <p className={`${card.badgeCol || 'text-green-600'} text-sm mt-2 font-medium`}>{card.badge}</p>
                 </div>
-                <div className={`w-16 h-16 rounded-2xl ${card.bg} flex items-center justify-center text-3xl`}>{card.icon}</div>
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-inner" style={{ background: card.iconBg }}>
+                  {card.icon}
+                </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Outlet Cards */}
+        {/* ===== OUTLET CARDS ===== */}
         <div className="grid grid-cols-2 gap-6">
           {filtered.map((outlet) => (
-            <div key={outlet.id} className="rounded-3xl p-6 shadow-sm outlet-card transition-all duration-200 hover:-translate-y-1 hover:shadow-xl"
-              style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.6)' }}>
-              <div className="flex gap-5">
+            <div key={outlet.id} className="rounded-[20px] p-7 shadow-[0_10px_30px_rgba(0,0,0,0.06)] transition-all duration-[250ms] ease-[cubic-bezier(.4,0,.2,1)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1"
+              style={{ background: 'linear-gradient(180deg, #ffffff 0%, #fcfcfc 100%)', border: '1px solid rgba(255,255,255,0.7)' }}>
+              <div className="flex gap-6">
                 {/* Image */}
-                <img src={outlet.image} alt={outlet.name}
-                  className="w-44 h-40 rounded-2xl object-cover flex-shrink-0" />
+                <div className="w-48 h-44 rounded-[20px] overflow-hidden flex-shrink-0 shadow-[0_8px_20px_rgba(0,0,0,0.08)] transition-all duration-[250ms] ease-[cubic-bezier(.4,0,.2,1)] hover:scale-[1.02]">
+                  <img src={outlet.image} alt={outlet.name}
+                    className="w-full h-full object-cover transition-transform duration-[400ms] ease-[cubic-bezier(.4,0,.2,1)] hover:scale-110" />
+                </div>
 
                 <div className="flex-1 min-w-0">
                   {/* Header */}
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-3">
-                        <h2 className="text-2xl font-bold text-gray-900">{outlet.name}</h2>
-                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">
-                          {outlet.status}
+                        <h2 className="text-[1.35rem] font-bold tracking-[-0.01em] text-gray-900">
+                          {outlet.name}
+                        </h2>
+                        <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide">
+                          ● {outlet.status}
                         </span>
                       </div>
-                      <p className="text-gray-500 text-sm mt-2">{outlet.address}</p>
+                      <p className="text-gray-400 text-sm mt-1.5">{outlet.address}</p>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <div className={`text-sm font-semibold ${outlet.growth >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                      <div className={`text-sm font-bold ${outlet.growth >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                         {outlet.growth >= 0 ? '▲' : '▼'} {Math.abs(outlet.growth)}%
                       </div>
-                      <div className="text-gray-400 text-xs">vs yesterday</div>
+                      <div className="text-gray-400 text-[11px] mt-0.5">vs yesterday</div>
                     </div>
                   </div>
 
-                  {/* Metrics Row */}
+                  {/* Metrics */}
                   <div className="grid grid-cols-3 gap-5 mt-6">
                     <div>
-                      <p className="text-gray-500 text-sm">Today&apos;s Revenue</p>
-                      <h3 className="text-4xl font-extrabold mt-1 text-gray-900">RM {outlet.todayRevenue.toLocaleString()}</h3>
+                      <p className="text-gray-400 text-xs uppercase tracking-wider font-medium">Today&apos;s Revenue</p>
+                      <h3 className="text-[2.2rem] font-extrabold tracking-[-0.03em] leading-tight mt-1">
+                        RM {outlet.todayRevenue.toLocaleString()}
+                      </h3>
                     </div>
-                    <div className="flex justify-center">
-                      {/* Progress Ring */}
-                      <div className="w-24 h-24 rounded-full flex items-center justify-center relative"
-                        style={{
-                          background: `radial-gradient(closest-side, white 78%, transparent 80% 100%),
-                            conic-gradient(#22c55e ${outlet.targetPct}%, #e5e7eb 0)`,
-                        }}>
-                        <div className="text-center">
-                          <div className="font-extrabold text-xl text-gray-900">{outlet.targetPct}%</div>
-                          <div className="text-xs text-gray-500">Target</div>
+                    <div className="flex justify-center items-start">
+                      {/* Animated Progress Ring */}
+                      <div className="relative w-[90px] h-[90px]">
+                        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                          <circle cx="50" cy="50" r="40" fill="none" stroke="#e5e7eb" strokeWidth="4" />
+                          <circle cx="50" cy="50" r="40" fill="none" stroke="#22c55e" strokeWidth="4"
+                            strokeLinecap="round" strokeDasharray={`${2 * Math.PI * 40}`}
+                            strokeDashoffset={`${2 * Math.PI * 40 * (1 - outlet.targetPct / 100)}`}
+                            className="transition-all duration-700 ease-out" />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="font-extrabold text-lg tracking-[-0.02em]">{outlet.targetPct}%</span>
+                          <span className="text-[10px] text-gray-400 font-medium -mt-0.5">Target</span>
                         </div>
                       </div>
                     </div>
                     <div>
-                      <p className="text-gray-500 text-sm">Daily Target</p>
-                      <h3 className="text-2xl font-bold mt-1 text-gray-900">RM {outlet.dailyTarget.toLocaleString()}</h3>
-                      <div className="w-full bg-gray-200 rounded-full h-3 mt-4 overflow-hidden">
-                        <div className="bg-green-500 h-full rounded-full transition-all duration-500"
-                          style={{ width: `${outlet.targetPct}%` }} />
+                      <p className="text-gray-400 text-xs uppercase tracking-wider font-medium">Daily Target</p>
+                      <h3 className="text-xl font-bold tracking-[-0.01em] mt-1">RM {outlet.dailyTarget.toLocaleString()}</h3>
+                      <div className="w-full bg-gray-100 rounded-full h-[10px] mt-4 overflow-hidden shadow-inner">
+                        <div className="h-full rounded-full transition-all duration-700 ease-out"
+                          style={{ width: `${outlet.targetPct}%`, background: 'linear-gradient(90deg, #22c55e, #16a34a)' }} />
                       </div>
                     </div>
                   </div>
 
-                  {/* 4 Stat Boxes */}
-                  <div className="grid grid-cols-4 gap-4 mt-6 text-center">
+                  {/* 4 Stats */}
+                  <div className="grid grid-cols-4 gap-3 mt-6">
                     {[
                       { label: 'Orders', value: outlet.todayOrders },
-                      { label: 'Menu Items', value: outlet.menuItems },
-                      { label: 'Inventory', value: outlet.inventory },
+                      { label: 'Menu', value: outlet.menuItems },
+                      { label: 'Stock', value: outlet.inventory },
                       { label: 'Staff', value: outlet.staff },
-                    ].map((stat, i) => (
-                      <div key={i} className="bg-gray-50 rounded-2xl p-4">
-                        <div className="text-gray-500 text-xs">{stat.label}</div>
-                        <div className="font-extrabold text-2xl mt-1 text-gray-900">{stat.value}</div>
+                    ].map((s, i) => (
+                      <div key={i} className="bg-gray-50/80 rounded-2xl py-3.5 px-3 text-center transition-all duration-[250ms] hover:bg-gray-100">
+                        <div className="text-gray-400 text-[11px] uppercase tracking-wider font-medium">{s.label}</div>
+                        <div className="font-extrabold text-xl mt-1 tracking-[-0.02em]">{s.value}</div>
                       </div>
                     ))}
                   </div>
 
-                  {/* Footer Actions */}
-                  <div className="flex items-center justify-between mt-6">
-                    <div className={`px-4 py-2 rounded-full text-sm font-semibold ${tagStyles[outlet.tagColor] || 'bg-gray-100 text-gray-700'}`}>
-                      {outlet.tag}
-                    </div>
+                  {/* Footer */}
+                  <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100/50">
+                    <PerformanceTag tag={outlet.tag} color={outlet.tagColor} />
                     <div className="flex gap-3">
-                      <Link href={`/dashboard/analytics`}
-                        className="px-5 py-3 rounded-2xl border border-gray-200 hover:bg-gray-100 transition font-medium text-sm bg-white text-gray-700">
+                      <Link href="/dashboard/analytics"
+                        className="px-5 py-[11px] rounded-2xl border border-gray-200 bg-white text-gray-700 font-medium text-sm
+                          transition-all duration-[250ms] ease-[cubic-bezier(.4,0,.2,1)]
+                          hover:bg-gray-50 hover:border-gray-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]">
                         Analytics
                       </Link>
-                      <Link href={`/dashboard/outlets/${outlet.id}`}
-                        className="text-white px-5 py-3 rounded-2xl font-semibold shadow-md text-sm transition hover:scale-105"
-                        style={{ background: 'linear-gradient(135deg, #9a5b13 0%, #c77b1d 100%)' }}>
+                      <button
+                        className="text-white px-6 py-[11px] rounded-2xl font-semibold text-sm
+                          transition-all duration-[250ms] ease-[cubic-bezier(.4,0,.2,1)]
+                          hover:scale-[1.03] hover:shadow-[0_8px_20px_rgba(168,106,28,0.3)]"
+                        style={{ background: 'linear-gradient(135deg, #a86a1c 0%, #d88a28 100%)' }}>
                         Manage Outlet
-                      </Link>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -181,21 +188,24 @@ export default function OutletsPage() {
         </div>
 
         {filtered.length === 0 && (
-          <div className="text-center py-20 text-gray-400">
-            <p className="text-lg">No outlets found matching "{search}"</p>
+          <div className="text-center py-20">
+            <p className="text-gray-400 text-lg">No outlets found matching &ldquo;{search}&rdquo;</p>
           </div>
         )}
       </div>
-
-      <style jsx>{`
-        .outlet-card {
-          transition: all 0.25s ease;
-        }
-        .outlet-card:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 20px 40px rgba(0,0,0,0.08);
-        }
-      `}</style>
     </div>
+  )
+}
+
+function PerformanceTag({ tag, color }: { tag: string; color: string }) {
+  const styles: Record<string, string> = {
+    amber: 'bg-amber-50 text-amber-700 border border-amber-200/50',
+    blue: 'bg-blue-50 text-blue-700 border border-blue-200/50',
+    red: 'bg-red-50 text-red-700 border border-red-200/50',
+  }
+  return (
+    <span className={`px-4 py-2 rounded-full text-xs font-bold tracking-wide ${styles[color] || 'bg-gray-50 text-gray-600 border border-gray-200/50'}`}>
+      {tag}
+    </span>
   )
 }
