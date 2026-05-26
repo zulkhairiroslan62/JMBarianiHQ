@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import Link from 'next/link'
 
 export default async function OutletsPage() {
   const outlets = await prisma.outlet.findMany({
@@ -96,9 +97,12 @@ export default async function OutletsPage() {
                   </div>
                 </div>
 
-                <button className="w-full text-sm text-[#7B3F00] hover:text-[#8B4A00] font-medium py-2 border border-[hsl(var(--color-border-secondary))] rounded-md hover:bg-[hsl(var(--color-background-secondary))]">
+                <Link 
+                  href={`/dashboard/outlets/${outlet.id}`}
+                  className="block w-full text-center text-sm text-[#7B3F00] hover:text-[#8B4A00] font-medium py-2 border border-[hsl(var(--color-border-secondary))] rounded-md hover:bg-[hsl(var(--color-background-secondary))]"
+                >
                   View Details
-                </button>
+                </Link>
               </div>
             </div>
           )
