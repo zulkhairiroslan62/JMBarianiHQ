@@ -112,7 +112,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-3">
       {/* KPI Cards */}
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
         <div className="bg-[hsl(var(--color-background-secondary))] rounded-lg p-3">
           <p className="text-[10.5px] text-[hsl(var(--color-text-tertiary))] mb-1">
             Today's Revenue
@@ -165,7 +165,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Charts and Alerts */}
-      <div className="grid grid-cols-[1fr_220px] gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-3">
         <div className="bg-[hsl(var(--color-background-primary))] border border-[hsl(var(--color-border-tertiary))] rounded-lg p-3.5">
           <p className="text-sm font-medium text-[hsl(var(--color-text-primary))] mb-2.5">
             Revenue per Outlet — Last 7 Days
@@ -209,7 +209,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Outlet Cards */}
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
         {outlets.map((outlet, idx) => {
           // Calculate outlet revenue today
           const outletTodaySales = todaySales.filter(s => s.outletId === outlet.id)

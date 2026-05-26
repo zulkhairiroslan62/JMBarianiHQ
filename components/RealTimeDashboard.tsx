@@ -77,7 +77,7 @@ export default function RealTimeDashboard() {
   return (
     <div className="space-y-3">
       {/* Live Revenue Counter */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <div className="bg-gradient-to-br from-[#7B3F00] to-[#5A2F00] rounded-lg p-4 text-white">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs opacity-90">Live Revenue Today</p>
@@ -111,7 +111,7 @@ export default function RealTimeDashboard() {
       </div>
 
       {/* Peak Hours Heatmap & Best Selling */}
-      <div className="grid grid-cols-[1.5fr_1fr] gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-3">
         {/* Peak Hours Heatmap */}
         <div className="bg-[hsl(var(--color-background-primary))] border border-[hsl(var(--color-border-tertiary))] rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
@@ -198,7 +198,7 @@ export default function RealTimeDashboard() {
         <p className="text-sm font-medium text-[hsl(var(--color-text-primary))] mb-3">
           Sales by Outlet — Today
         </p>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {data.outletBreakdown.map((outlet, idx) => {
             const colors = ['#C8440A', '#185FA5', '#1D9E75', '#BA7517']
             const percentage = data.totalRevenue > 0 

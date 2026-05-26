@@ -27,7 +27,7 @@ export default async function OutletsPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {outlets.map((outlet) => {
           const progress = Math.min(100, Math.floor(Math.random() * 120) + 60)
           const todayRevenue = Math.floor((outlet.targetDaily * progress) / 100)
@@ -69,7 +69,7 @@ export default async function OutletsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[hsl(var(--color-border-tertiary))]">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-[hsl(var(--color-border-tertiary))]">
                   <div>
                     <p className="text-[10px] text-[hsl(var(--color-text-tertiary))] mb-0.5">Orders Today</p>
                     <p className="text-lg font-medium text-[hsl(var(--color-text-primary))]">{todayOrders}</p>

@@ -91,7 +91,7 @@ export default async function OutletDetailPage({ params }: { params: { id: strin
       </div>
 
       {/* Performance Cards */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="bg-[hsl(var(--color-background-primary))] border border-[hsl(var(--color-border-tertiary))] rounded-lg p-3">
           <p className="text-[10.5px] text-[hsl(var(--color-text-tertiary))] mb-1">Today's Revenue</p>
           <p className="text-2xl font-semibold text-[hsl(var(--color-text-primary))]">
@@ -188,7 +188,7 @@ export default async function OutletDetailPage({ params }: { params: { id: strin
         <h3 className="text-sm font-medium text-[hsl(var(--color-text-primary))] mb-3">
           Inventory Status ({outlet.inventory.length} items)
         </h3>
-        <div className="grid grid-cols-3 gap-3 mb-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
           <div className="text-center p-2 bg-[#EAF3DE] rounded">
             <p className="text-xs text-[#27500A] mb-1">Sufficient</p>
             <p className="text-lg font-bold text-[#27500A]">
@@ -234,7 +234,7 @@ export default async function OutletDetailPage({ params }: { params: { id: strin
         <h3 className="text-sm font-medium text-[hsl(var(--color-text-primary))] mb-3">
           Menu Items ({outlet.menuItems.length})
         </h3>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {outlet.menuItems.slice(0, 6).map((item) => (
             <div key={item.id} className="p-2 border border-[hsl(var(--color-border-tertiary))] rounded">
               <p className="text-sm font-medium text-[hsl(var(--color-text-primary))] mb-1">

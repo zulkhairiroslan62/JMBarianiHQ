@@ -137,7 +137,7 @@ export default async function ReportsPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="bg-[hsl(var(--color-background-primary))] border border-[hsl(var(--color-border-tertiary))] rounded-lg p-3">
           <p className="text-[10.5px] text-[hsl(var(--color-text-tertiary))] mb-1">Total Revenue</p>
           <p className="text-2xl font-semibold text-[hsl(var(--color-text-primary))]">

@@ -197,7 +197,7 @@ export default function InvoicePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
               <div>
                 <label className="block text-xs font-medium text-[hsl(var(--color-text-secondary))] mb-1.5">
                   Supplier
