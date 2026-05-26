@@ -14,12 +14,12 @@ export default function Sidebar() {
     <div className="w-[188px] flex-shrink-0 bg-[#1A0D00] flex flex-col overflow-hidden">
       {/* Logo */}
       <div className="px-3 py-3.5 border-b border-[rgba(255,255,255,0.07)] flex items-center gap-2">
-        <div className="w-7 h-7 bg-[#7B3F00] rounded-lg flex items-center justify-center flex-shrink-0">
-          <i className="ti ti-tools-kitchen-2 text-[#FAC775] text-[15px]" aria-hidden="true"></i>
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+          <img src="/logo.png" alt="JM Bariani House" className="w-full h-full object-contain" />
         </div>
         <div>
-          <p className="text-xs font-medium text-[#FAC775] m-0">JM Bariani</p>
-          <p className="text-[10px] text-[rgba(250,199,117,0.4)] m-0">4 outlets</p>
+          <p className="text-xs font-medium text-[#FAC775] m-0">JM Bariani House</p>
+          <p className="text-[10px] text-[rgba(250,199,117,0.4)] m-0">Subang Jaya HQ</p>
         </div>
       </div>
 

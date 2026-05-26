@@ -41,15 +41,13 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="bg-[#2A1A0F] rounded-lg border border-[rgba(255,255,255,0.07)] p-8">
           <div className="flex items-center justify-center mb-8">
-            <div className="w-16 h-16 bg-[#7B3F00] rounded-xl flex items-center justify-center">
-              <svg className="w-8 h-8 text-[#FAC775]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-              </svg>
+            <div className="w-20 h-20 rounded-xl flex items-center justify-center overflow-hidden">
+              <img src="/logo.png" alt="JM Bariani House" className="w-full h-full object-contain" />
             </div>
           </div>
           
           <h1 className="text-2xl font-semibold text-[#FAC775] text-center mb-2">
-            JM Bariani HQ
+            JM Bariani House
           </h1>
           <p className="text-sm text-[rgba(250,199,117,0.4)] text-center mb-8">
             Restaurant Management System
@@ -67,7 +65,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full px-4 py-2.5 bg-[#1A0D00] border border-[rgba(255,255,255,0.1)] rounded-lg text-white placeholder-[rgba(255,255,255,0.3)] focus:outline-none focus:border-[#7B3F00] focus:ring-1 focus:ring-[#7B3F00]"
-                placeholder="owner@jmbariani.com"
+                placeholder="owner@jmbarianihouse.com"
               />
             </div>
 
@@ -103,7 +101,7 @@ export default function LoginPage() {
 
           <div className="mt-6 pt-6 border-t border-[rgba(255,255,255,0.07)]">
             <p className="text-xs text-[rgba(255,255,255,0.3)] text-center">
-              Demo credentials: owner@jmbariani.com / admin123
+              Demo credentials: owner@jmbarianihouse.com / admin123
             </p>
           </div>
         </div>
